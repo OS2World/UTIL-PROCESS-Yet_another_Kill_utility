@@ -1,0 +1,50 @@
+This README describes a special new function of XF86SUP.SYS 1.455 or
+later.
+
+This XF86SUP driver has a new IOCTL function built in which can kill
+arbitrary processes, even if other "kill" programs, including watchcat
+consider them as "unkillable".
+
+This is possible because of a new undocumented function in fixpack 17.
+
+The directory "DEATH" provides a user API and a sample application which
+makes use of the function.
+
+API:
+	Send an IOCTL of category 0x76, function code 0x65 to the driver
+	"FASTIO$". It must be given an USHORT process ID of the process to
+	be killed as the parameter packet.
+
+	With the provided makefile you can build a library for VAC++, 
+	Watcom 10.X and EMX/gcc which provides this ioctl in a function
+
+	extern "C" APIRET death(PID proc_to_kill);
+
+Sample code:
+
+	DEATH.EXE
+
+	Pass it a decimal process ID as the first argument. Source code for
+	this applet is available.
+
+Notes:
+
+	1. FASTIO$ has been protected to reject to kill processes with a
+	   PID < 13. These processes (e.g. PMSHELL) can hang the system
+	   severely, if they contain (like PMSHELL.EXE) the session manager.
+	2. In contrast to DosKillProcess, you can only kill one process
+	   at a time, not a process tree.
+	3. The killed process receives a CTRL-BREAK signal which it cannot
+	   catch with an exception handler. This means that it has no chance
+	   to do cleanup, e.g. save write buffers to disk or close files.
+
+A simple "immortal" program to test the code is PIG.EXE. It catches all
+exceptions (including the CTRL-C, CTRL-BREAK, and DosKillProcess) signals
+with an own exception handler, and wraps itself in a "Must Complete" section.
+DEATH.EXE can kill it.
+
+
+Feel free to use the API and the sample code in own applications.
+
+Holger Veit
+
